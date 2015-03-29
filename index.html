@@ -5,6 +5,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>JS-XLSX Live Demo</title>
+<style>
+td { padding-right:1em; }
+</style>
 </head>
 <body>
 <b>JS-XLSX (XLSX/XLSB/XLSM) Live Demo</b><br />
@@ -19,6 +22,8 @@ Output Format:
 
 <p><label for="xlf">Fichier &agrave; importer: </label><input type="file" name="xlfile" id="xlf" /></p>
 <pre id="out"></pre>
+<table id="selects"></table>
+<p><button type="button" id="go" disabled>Importer</button></p>
 <br />
 <script src="shim.js"></script>
 <script src="jszip.js"></script>
