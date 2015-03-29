@@ -129,16 +129,15 @@ function convert(e) {
 	var count = 0;
 	for (var cl in all_clients) {
 		var c = all_clients[cl];
-		// TODO a query to see if c exists already
+		// TODO a query to see if c exists already and set sid appropriately
 		var cReq = new XMLHttpRequest();
-		var guid = getGUID();
+	        var guid = Math.uuid();
 
-		cReq.onload = function() {
+		cReq.onload = function(e) {
 			var confirmReq = new XMLHttpRequest();
-			confirmReq.onload = reqListener;
-			confirmReq.open("get", "/backend/confirm_push.php?guid="+guid, true);
+			confirmReq.open("get", "/backend/confirm_push.php?guid="+this, true);
 			confirmReq.send();
-		};
+		}.bind(guid);
 
 		cReq.open("post", "/backend/push_one_client.php", true);
 		var fd = new FormData();
