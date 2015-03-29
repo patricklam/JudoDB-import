@@ -1,3 +1,25 @@
+function load_clubs() {
+    var clubSelect = document.getElementById("club");
+
+    var clubReq = new XMLHttpRequest();
+    clubReq.onload = function(e) {
+        clubs = JSON.parse(clubReq.responseText);
+        for (c in clubs) {
+            club = clubs[c];
+            var option = document.createElement("option");
+            option.value = club.id;
+            option.text = club.nom;
+            clubSelect.appendChild(option);
+        }
+    }
+
+    clubReq.open("get", "/backend/pull_club_list.php", true);
+    clubReq.send();
+}
+
+load_clubs();
+
+
 var fields = ["nom", "prenom", "ddn", "courriel", "adresse", "ville", "code_postal", "tel", "affiliation", "carte_resident", "nom_recu_impot", "tel_contact_urgence", "sexe"]
 var key_fields = ["nom", "prenom", "ddn"];
 
@@ -93,6 +115,9 @@ function to_import(workbook) {
 }
 
 function convert(e) {
+	var clubs = document.getElementById("club");
+	var current_club = clubs[clubs.selectedIndex].value;
+
 	// make sure that we have the key fields assigned
 	var key_field_selects = {}, field_selects = {};
 	for (kf in key_fields) {
@@ -113,6 +138,7 @@ function convert(e) {
 	}
 
 	// build up mapping for all fields, also
+	// TODO support multiple mappings
 	for (f in fields) {
 		var ft = fields[f];
 		for (s in selects) {
@@ -126,7 +152,6 @@ function convert(e) {
 	// should refactor that to build mapping for all fields and check for key fields
 
 	var result = [];
-	var count = 0;
 	for (var cl in all_clients) {
 		var c = all_clients[cl];
 		// TODO a query to see if c exists already and set sid appropriately
@@ -141,17 +166,20 @@ function convert(e) {
 
 		cReq.open("post", "/backend/push_one_client.php", true);
 		var fd = new FormData();
+	        fd.append("date_inscription_encoded", getDate()+",");
+	        fd.append("club_id_encoded", current_club+",");
+	        var f = {};
 		for (var ss in field_selects) {
 			var fn = selects[field_selects[ss]].id;
-			console.log(ss+":"+fn);
-			fd.append(ss, c[fn]);
+			if (f[ss]) 
+				f[ss] = f[ss] + " " + c[fn];
+			else 
+				f[ss] = c[fn];
+			fd.append(ss, f[ss]);
 		}
 		fd.append("guid", guid);
 
 		cReq.send(fd);
-
-		count++;
-		if (count > 2) break;
 	}
 }
 
