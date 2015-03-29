@@ -34,6 +34,12 @@ var observedColumns = [];
 var selects = [];
 var all_clients;
 
+var guid = 0;
+function getGUID() {
+	guid++;
+	return guid;
+}
+
 function to_import(workbook) {
 	workbook.SheetNames.forEach(function(sheetName) {
 		all_clients = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:parseInt(headers.value)});
@@ -86,10 +92,6 @@ function to_import(workbook) {
 	});
 }
 
-function reqListener() {
-	console.log(this.responseText);
-}
-
 function convert(e) {
 	// make sure that we have the key fields assigned
 	var key_field_selects = {}, field_selects = {};
@@ -129,23 +131,25 @@ function convert(e) {
 		var c = all_clients[cl];
 		// TODO a query to see if c exists already
 		var cReq = new XMLHttpRequest();
-		cReq.onload = reqListener;
+		var guid = getGUID();
+
+		cReq.onload = function() {
+			var confirmReq = new XMLHttpRequest();
+			confirmReq.onload = reqListener;
+			confirmReq.open("get", "/backend/confirm_push.php?guid="+guid, true);
+			confirmReq.send();
+		};
+
 		cReq.open("post", "/backend/push_one_client.php", true);
-		// must create guid
 		var fd = new FormData();
 		for (var ss in field_selects) {
 			var fn = selects[field_selects[ss]].id;
 			console.log(ss+":"+fn);
 			fd.append(ss, c[fn]);
 		}
+		fd.append("guid", guid);
 
 		cReq.send(fd);
-
-		// must use guid
-		var confirmReq = new XMLHttpRequest();
-		confirmReq.onload = reqListener;
-		confirmReq.open("get", "/backend/confirm_push.php", true);
-		confirmReq.send();
 
 		count++;
 		if (count > 2) break;
