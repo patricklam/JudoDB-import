@@ -11,8 +11,8 @@
 Output Format:
 <select name="format">
 <option value="json" selected> JSON</option>
+<option value="import"> Importer</option>
 <option value="csv"> CSV</option>
-<option value="form"> FORMULAE</option>
 </select><br />
 
 <p><label for="headers">Rang&eacute;es en-t&ecirc;te:</label> <input type="text" name="headers" id="headers" value="3" /></p>
@@ -48,7 +48,7 @@ function s2ab(s) {
 	return [v, b];
 }
 
-function xlsxworker_xfer(data, cb) {
+function xlsxworker(data, cb) {
 	var worker = new Worker('./xlsxworker2.js');
 	worker.onmessage = function(e) {
 		switch(e.data.t) {
@@ -59,10 +59,6 @@ function xlsxworker_xfer(data, cb) {
 	};
 	var val = s2ab(data);
 	worker.postMessage(val[1], [val[1]]);
-}
-
-function xlsxworker(data, cb) {
-	xlsxworker_xfer(data, cb);
 }
 
 function get_radio_value( radioName ) {
@@ -103,15 +99,24 @@ function to_csv(workbook) {
 	return result.join("\n");
 }
 
-function to_formulae(workbook) {
+function to_import(workbook) {
 	var result = [];
 	workbook.SheetNames.forEach(function(sheetName) {
-		var formulae = XLSX.utils.get_formulae(workbook.Sheets[sheetName]);
-		if(formulae.length > 0){
-			result.push("SHEET: " + sheetName);
-			result.push("");
-			result.push(formulae.join("\n"));
+		var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:parseInt(headers.value)});
+
+		var observedColumns = [], observedColumnsSet = {};
+		for (var r in roa) {
+			for (var c in roa[r]) {
+				if (roa[r].hasOwnProperty(c)) {
+					cc = c;
+					if (!(cc in observedColumnsSet)) {
+						observedColumns.push(cc);
+						observedColumnsSet[cc] = true;
+					}
+				}
+			}
 		}
+		result.push(observedColumns.join(":"));
 	});
 	return result.join("\n");
 }
@@ -123,11 +128,11 @@ function process_wb(wb) {
 		case "json":
 			output = JSON.stringify(to_json(wb), 2, 2);
 			break;
-		case "form":
-			output = to_formulae(wb);
+		case "import":
+			output = to_import(wb);
 			break;
 		default:
-		output = to_csv(wb);
+			output = to_csv(wb);
 	}
 	if(out.innerText === undefined) out.textContent = output;
 	else out.innerText = output;
