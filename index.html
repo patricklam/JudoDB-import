@@ -10,8 +10,8 @@
 <b>JS-XLSX (XLSX/XLSB/XLSM) Live Demo</b><br />
 Output Format:
 <select name="format">
-<option value="csv" selected> CSV</option>
-<option value="json"> JSON</option>
+<option value="json" selected> JSON</option>
+<option value="csv"> CSV</option>
 <option value="form"> FORMULAE</option>
 </select><br />
 
@@ -25,10 +25,6 @@ Output Format:
 <script src="dist/xlsx.js"></script>
 <script src="dist/ods.js"></script>
 <script>
-
-var use_worker = true;
-var transferable = true;
-var rABS = true;
 
 var wtf_mode = false;
 
@@ -52,21 +48,8 @@ function s2ab(s) {
 	return [v, b];
 }
 
-function xlsxworker_noxfer(data, cb) {
-	var worker = new Worker('./xlsxworker.js');
-	worker.onmessage = function(e) {
-		switch(e.data.t) {
-			case 'ready': break;
-			case 'e': console.error(e.data.d); break;
-			case 'xlsx': cb(JSON.parse(e.data.d)); break;
-		}
-	};
-	var arr = rABS ? data : btoa(fixdata(data));
-	worker.postMessage({d:arr,b:rABS});
-}
-
 function xlsxworker_xfer(data, cb) {
-	var worker = new Worker(rABS ? './xlsxworker2.js' : './xlsxworker1.js');
+	var worker = new Worker('./xlsxworker2.js');
 	worker.onmessage = function(e) {
 		switch(e.data.t) {
 			case 'ready': break;
@@ -74,17 +57,12 @@ function xlsxworker_xfer(data, cb) {
 			default: xx=ab2str(e.data).replace(/\n/g,"\\n").replace(/\r/g,"\\r"); console.log("done"); cb(JSON.parse(xx)); break;
 		}
 	};
-	if(rABS) {
-		var val = s2ab(data);
-		worker.postMessage(val[1], [val[1]]);
-	} else {
-		worker.postMessage(data, [data]);
-	}
+	var val = s2ab(data);
+	worker.postMessage(val[1], [val[1]]);
 }
 
 function xlsxworker(data, cb) {
-	if(transferable) xlsxworker_xfer(data, cb);
-	else xlsxworker_noxfer(data, cb);
+	xlsxworker_xfer(data, cb);
 }
 
 function get_radio_value( radioName ) {
@@ -96,10 +74,15 @@ function get_radio_value( radioName ) {
 	}
 }
 
+// note to self: can get the range like this:
+// var r = XLSX.utils.decode_range(workbook.Sheets[sheetName]["!ref"]);
+// r.s.r += parseInt(headers.value);
+// and then re-encode it by calling XLSX.utils.encode_range(r).
+				
 function to_json(workbook) {
 	var result = {};
 	workbook.SheetNames.forEach(function(sheetName) {
-		var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+		var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:parseInt(headers.value)});
 		if(roa.length > 0){
 			result[sheetName] = roa;
 		}
@@ -151,7 +134,7 @@ function process_wb(wb) {
 	if(typeof console !== 'undefined') console.log("output", new Date());
 }
 
-
+var headers = document.getElementById('headers');
 var xlf = document.getElementById('xlf');
 function handleFile(e) {
 	var files = e.target.files;
@@ -160,23 +143,11 @@ function handleFile(e) {
 		var reader = new FileReader();
 		var name = f.name;
 		reader.onload = function(e) {
-			if(typeof console !== 'undefined') console.log("onload", new Date(), rABS, use_worker);
+			if(typeof console !== 'undefined') console.log("onload", new Date());
 			var data = e.target.result;
-			if(use_worker) {
-				xlsxworker(data, process_wb);
-			} else {
-				var wb;
-				if(rABS) {
-					wb = XLSX.read(data, {type: 'binary'});
-				} else {
-				var arr = fixdata(data);
-					wb = XLSX.read(btoa(arr), {type: 'base64'});
-				}
-				process_wb(wb);
-			}
+	        xlsxworker(data, process_wb);
 		};
-		if(rABS) reader.readAsBinaryString(f);
-		else reader.readAsArrayBuffer(f);
+		reader.readAsBinaryString(f);
 	}
 }
 
