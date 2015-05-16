@@ -81,6 +81,7 @@ function to_import(workbook) {
 		// result.push(observedColumns.join(":"));
 
 		var selectsDiv = document.getElementById("selects");
+	    // TODO clear out old selects
 		for (c in observedColumns) {
 			var cc = observedColumns[c];
 			var newSelectLabel = document.createElement("label");
