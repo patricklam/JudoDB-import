@@ -3,10 +3,7 @@
 * concatenation of dupe fields (nom_1, prenom_1) and allow support of field order
 * gnumeric xlsx fails to load
 * anjou # headers is 2
-
-facturation prix: par date de naissance ou par cours choisi
-liste des inscriptions impayes/nn affilies
-rabais resident font size
+* allow saving of settings for the matching
 
 importation restreint a partir du format specifie
-date d'importation dans la base des donnees
+record date d'importation dans la base des donnees
