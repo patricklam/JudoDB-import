@@ -139,14 +139,17 @@ function convert(e) {
     }
 
     // build up mapping for all fields, also
-    // TODO support multiple mappings
     for (f in fields) {
         var ft = fields[f];
         for (s in selects) {
             var ss = selects[s];
             if (ft == ss.options[ss.selectedIndex].value) {
-                field_selects[ft] = s;
-                break;
+                if (!(ft in field_selects)) {
+                    field_selects[ft] = [s];
+                } else {
+                    field_selects[ft].push(s);
+		    // TODO separate multiple mappings by custom separator
+                }
             }
         }
     }
@@ -167,15 +170,23 @@ function convert(e) {
 
         cReq.open("post", "/backend/push_one_client.php", true);
         var fd = new FormData();
-            fd.append("date_inscription_encoded", getDate()+",");
-            fd.append("club_id_encoded", current_club+",");
-            var f = {};
+        fd.append("date_inscription_encoded", getDbDate()+",");
+        fd.append("club_id_encoded", current_club+",");
+	// XXX must also include 'saisons' field!
+        var f = {};
         for (var ss in field_selects) {
-            var fn = selects[field_selects[ss]].id;
-            if (f[ss]) 
-                f[ss] = f[ss] + " " + c[fn];
-            else 
-                f[ss] = c[fn];
+            for (var fn in field_selects[ss]) {
+                var fid = selects[field_selects[ss][fn]].id;
+                if (c[fid] === undefined)
+                    c[fid] = "";
+                if (f[ss])
+                    f[ss] = c[fid] + " " + f[ss] + " ";
+                else
+                    f[ss] = c[fid];
+		// XX hack
+		if (fn == 2)
+		    f[ss] += "/";
+            }
             fd.append(ss, f[ss]);
         }
         fd.append("guid", guid);
