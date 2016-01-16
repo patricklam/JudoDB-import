@@ -14,6 +14,25 @@ function getDbDate() {
     return yyyy + "-" + mm + "-" + dd;
 }
 
+function dbEncode(year, month, day) {
+    return year + "-" + month + "-" + day;
+}
+
+function xlMonthToNum(month) {
+    if (month == 'Jan') return 1;
+    if (month == 'Feb') return 2;
+    if (month == 'Mar') return 3;
+    if (month == 'Apr') return 4;
+    if (month == 'May') return 5;
+    if (month == 'Jun') return 6;
+    if (month == 'Jul') return 7;
+    if (month == 'Aug') return 8;
+    if (month == 'Sep') return 9;
+    if (month == 'Oct') return 10;
+    if (month == 'Nov') return 11;
+    if (month == 'Dec') return 12;
+}
+
 function fixdata(data) {
     var o = "", l = 0, w = 10240;
     for(; l<data.byteLength/w; ++l) o+=String.fromCharCode.apply(null,new Uint8Array(data.slice(l*w,l*w+w)));
