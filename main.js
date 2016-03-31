@@ -153,7 +153,7 @@ function convert(e) {
                     field_selects[ft] = [s];
                 } else {
                     field_selects[ft].push(s);
-		    // TODO separate multiple mappings by custom separator
+                    // TODO separate multiple mappings by custom separator
                 }
             }
         }
@@ -178,7 +178,7 @@ function convert(e) {
         fd.append("date_inscription_encoded", getDbDate()+",");
         fd.append("club_id_encoded", current_club+",");
         fd.append("saisons_encoded", saisons.value);
-	// XXX must also include 'saisons' field!
+        // XXX must also include 'saisons' field!
         var f = {};
         for (var ss in field_selects) {
             for (var fn in field_selects[ss]) {
@@ -202,14 +202,14 @@ function convert(e) {
                         f[ss] = dbEncode(date_bits[3], date_bits[1], date_bits[2]);
                     }
                 }
-		if (ss == 'grade') {
-		    var today = new Date();
-		    fd.append('grades_encoded', c[fid]);
-		    fd.append('grade_dates_encoded', getDbDate());
-		}
-		// XX hack
-		//if (fn == 2)
-		//f[ss] += "/";
+                if (ss == 'grade') {
+                    var today = new Date();
+                    fd.append('grades_encoded', c[fid]);
+                    fd.append('grade_dates_encoded', getDbDate());
+                }
+                // XX hack
+                //if (fn == 2)
+                //f[ss] += "/";
             }
             fd.append(ss, f[ss]);
         }
