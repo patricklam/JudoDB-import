@@ -190,14 +190,18 @@ function convert(e) {
                 else
                     f[ss] = c[fid];
 
-		if (ss == 'ddn') {
-		    // convert date format if necessary
-		    var xlDateRE=/^(\d*)-(\w*)-(\d*)$/;
-		    if (c[fid].search(xlDateRE) == 0) {
-			date_bits = xlDateRE.exec(c[fid]);
-			f[ss] = dbEncode(date_bits[1], xlMonthToNum(date_bits[2]), date_bits[3]);
-		    }
-		}
+                if (ss == 'ddn') {
+                    // convert date format if necessary
+                    var xlDateRE=/^(\d*)-(\w*)-(\d*)$/;
+                    var altDateRE=/^(\d*)\/(\d*)\/(\d*)$/;
+                    if (c[fid].search(xlDateRE) == 0) {
+                        date_bits = xlDateRE.exec(c[fid]);
+                        f[ss] = dbEncode(date_bits[1], xlMonthToNum(date_bits[2]), date_bits[3]);
+                    } else if (c[fid].search(altDateRE) == 0) {
+                        date_bits = altDateRE.exec(c[fid]);
+                        f[ss] = dbEncode(date_bits[3], date_bits[1], date_bits[2]);
+                    }
+                }
 		if (ss == 'grade') {
 		    var today = new Date();
 		    fd.append('grades_encoded', c[fid]);
