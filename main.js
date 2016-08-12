@@ -6,6 +6,7 @@ function load_clubs() {
         clubs = JSON.parse(clubReq.responseText);
         for (c in clubs) {
             club = clubs[c];
+            if (club.nom == 'admin') continue;
             var option = document.createElement("option");
             option.value = club.id;
             option.text = club.nom;
@@ -20,7 +21,7 @@ function load_clubs() {
 load_clubs();
 
 
-var fields = ["nom", "prenom", "ddn", "courriel", "adresse", "ville", "code_postal", "tel", "affiliation", "carte_resident", "nom_recu_impot", "tel_contact_urgence", "sexe"]
+var fields = ["nom", "prenom", "ddn", "courriel", "adresse", "ville", "code_postal", "tel", "affiliation", "carte_resident", "nom_recu_impot", "tel_contact_urgence", "sexe", "grade"]
 var key_fields = ["nom", "prenom", "ddn"];
 
 // note to self: can get the range like this:
@@ -67,6 +68,7 @@ function to_import(workbook) {
         all_clients = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:1});
 
         var observedColumnsSet = {};
+        observedColumns = [];
         for (var r in all_clients) {
             for (var c in all_clients[r]) {
                 if (all_clients[r].hasOwnProperty(c)) {
@@ -81,7 +83,10 @@ function to_import(workbook) {
         // result.push(observedColumns.join(":"));
 
         var selectsDiv = document.getElementById("selects");
-        // TODO clear out old selects
+        selects = [];
+        while (selectsDiv.firstChild) {
+            selectsDiv.removeChild(selectsDiv.firstChild);
+        }
         for (c in observedColumns) {
             var cc = observedColumns[c];
             var newSelectLabel = document.createElement("label");
@@ -139,14 +144,17 @@ function convert(e) {
     }
 
     // build up mapping for all fields, also
-    // TODO support multiple mappings
     for (f in fields) {
         var ft = fields[f];
         for (s in selects) {
             var ss = selects[s];
             if (ft == ss.options[ss.selectedIndex].value) {
-                field_selects[ft] = s;
-                break;
+                if (!(ft in field_selects)) {
+                    field_selects[ft] = [s];
+                } else {
+                    field_selects[ft].push(s);
+                    // TODO separate multiple mappings by custom separator
+                }
             }
         }
     }
@@ -167,15 +175,42 @@ function convert(e) {
 
         cReq.open("post", "/backend/push_one_client.php", true);
         var fd = new FormData();
-            fd.append("date_inscription_encoded", getDate()+",");
-            fd.append("club_id_encoded", current_club+",");
-            var f = {};
+        fd.append("date_inscription_encoded", getDbDate()+",");
+        fd.append("club_id_encoded", current_club+",");
+        fd.append("saisons_encoded", saisons.value);
+        // XXX must also include 'saisons' field!
+        var f = {};
         for (var ss in field_selects) {
-            var fn = selects[field_selects[ss]].id;
-            if (f[ss]) 
-                f[ss] = f[ss] + " " + c[fn];
-            else 
-                f[ss] = c[fn];
+            for (var fn in field_selects[ss]) {
+                var fid = selects[field_selects[ss][fn]].id;
+                if (c[fid] === undefined)
+                    c[fid] = "";
+                if (f[ss])
+                    f[ss] = c[fid] + " " + f[ss] + " ";
+                else
+                    f[ss] = c[fid];
+
+                if (ss == 'ddn') {
+                    // convert date format if necessary
+                    var xlDateRE=/^(\d*)-(\w*)-(\d*)$/;
+                    var altDateRE=/^(\d*)\/(\d*)\/(\d*)$/;
+                    if (c[fid].search(xlDateRE) == 0) {
+                        date_bits = xlDateRE.exec(c[fid]);
+                        f[ss] = dbEncode(date_bits[1], xlMonthToNum(date_bits[2]), date_bits[3]);
+                    } else if (c[fid].search(altDateRE) == 0) {
+                        date_bits = altDateRE.exec(c[fid]);
+                        f[ss] = dbEncode(date_bits[3], date_bits[1], date_bits[2]);
+                    }
+                }
+                if (ss == 'grade') {
+                    var today = new Date();
+                    fd.append('grades_encoded', c[fid]);
+                    fd.append('grade_dates_encoded', getDbDate());
+                }
+                // XX hack
+                //if (fn == 2)
+                //f[ss] += "/";
+            }
             fd.append(ss, f[ss]);
         }
         fd.append("guid", guid);
