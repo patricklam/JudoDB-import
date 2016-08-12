@@ -32,7 +32,7 @@ var key_fields = ["nom", "prenom", "ddn"];
 function to_json(workbook) {
     var result = {};
     workbook.SheetNames.forEach(function(sheetName) {
-        var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:1});
+        var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:0});
         if(roa.length > 0){
             result[sheetName] = roa;
         }
@@ -65,7 +65,7 @@ function getGUID() {
 
 function to_import(workbook) {
     workbook.SheetNames.forEach(function(sheetName) {
-        all_clients = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:1});
+        all_clients = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:0});
 
         var observedColumnsSet = {};
         observedColumns = [];
