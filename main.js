@@ -31,7 +31,7 @@ var key_fields = ["nom", "prenom", "ddn"];
 function to_json(workbook) {
     var result = {};
     workbook.SheetNames.forEach(function(sheetName) {
-        var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:parseInt(headers.value)});
+        var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:1});
         if(roa.length > 0){
             result[sheetName] = roa;
         }
@@ -64,7 +64,7 @@ function getGUID() {
 
 function to_import(workbook) {
     workbook.SheetNames.forEach(function(sheetName) {
-        all_clients = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:parseInt(headers.value)});
+        all_clients = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], {range:1});
 
         var observedColumnsSet = {};
         for (var r in all_clients) {
@@ -184,7 +184,6 @@ function convert(e) {
     }
 }
 
-var headers = document.getElementById('headers');
 var xlf = document.getElementById('xlf');
 function handleFile(e) {
     var files = xlf.files;
@@ -201,6 +200,5 @@ function handleFile(e) {
     }
 }
 
-if(headers.addEventListener) headers.addEventListener('change', handleFile, false);
 if(xlf.addEventListener) xlf.addEventListener('change', handleFile, false);
 if(go.addEventListener) go.addEventListener('click', convert, false);
