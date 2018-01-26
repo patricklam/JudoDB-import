@@ -11,7 +11,7 @@ function getDbDate() {
     var dd = today.getDate();
     var mm = today.getMonth()+1;
     var yyyy = today.getFullYear();
-    return yyyy + "-" + mm + "-" + dd;
+    return dbEncode(yyyy, mm, dd);
 }
 
 function dbEncode(year, month, day) {

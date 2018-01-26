@@ -23,6 +23,10 @@ load_clubs();
 
 var fields = ["nom", "prenom", "ddn", "courriel", "adresse", "ville", "code_postal", "tel", "affiliation", "carte_resident", "nom_recu_impot", "tel_contact_urgence", "sexe", "grade"]
 var key_fields = ["nom", "prenom", "ddn"];
+var fields_to_cc = { 'nom':'Nom', 'prenom':'Prenom', 'ddn':'Date de naissance', 'courriel':'courriel',
+		     'adresse':'adresse', 'ville':'ville', 'tel':'telephone', 'nom_recu_impot':'Nom parents',
+		     'tel_contact_urgence':'Telephone urgence', 'sexe':'sexe', 'grade':'grade',
+		     'affiliation':'# Judo CA'};
 
 // note to self: can get the range like this:
 // var r = XLSX.utils.decode_range(workbook.Sheets[sheetName]["!ref"]);
@@ -112,12 +116,16 @@ function to_import(workbook) {
                 option.value = fields[i];
                 option.text = fields[i];
                 newSelect.appendChild(option);
+		if (cc.localeCompare(fields_to_cc[fields[i]], 'fr', {sensitivity:'base'}) == 0) {
+                    newSelect.selectedIndex = i+1;
+		}
             }
         }
 
         var go = document.getElementById("go");
         go["disabled"] = false;
     });
+    return "";
 }
 
 function convert(e) {
@@ -175,12 +183,34 @@ function convert(e) {
 
         cReq.open("post", "/backend/push_one_client.php", true);
         var fd = new FormData();
-        fd.append("date_inscription_encoded", getDbDate()+",");
-        fd.append("club_id_encoded", current_club+",");
-        fd.append("saisons_encoded", saisons.value);
-        // XXX must also include 'saisons' field!
         var f = {};
-        for (var ss in field_selects) {
+
+	var services = [{ 'date_inscription' : getDbDate(),
+			  'club_id' : current_club,
+			  'saisons' : saisons.value,
+			  'date_affiliation_envoye' : '0000-00-00',
+			  'carte_judoca_recu' : '0',
+			  'sans_affiliation' : '0',
+			  'affiliation_initiation' : '0',
+			  'affiliation_ecole' : '0',
+			  'affiliation_parascolaire' : '0',
+			  'cours' : '',
+			  'no_sessions' : '2',
+			  'passeport' : '0',
+			  'resident' : '0',
+			  'paypal' : '0',
+			  'judogi' : '',
+			  'escompte' : '',
+			  'categorie_frais' : '',
+			  'affiliation_frais' : '',
+			  'supp_frais' : '',
+			  'frais' : '',
+			  'affiliation_envoye' : '0',
+			  'solde' : '0'
+			}];
+	var client_encoded = { 'services' : services };
+
+	for (var ss in field_selects) {
             for (var fn in field_selects[ss]) {
                 var fid = selects[field_selects[ss][fn]].id;
                 if (c[fid] === undefined)
@@ -194,13 +224,20 @@ function convert(e) {
                     // convert date format if necessary
                     var xlDateRE=/^(\d*)-(\w*)-(\d*)$/;
                     var altDateRE=/^(\d*)\/(\d*)\/(\d*)$/;
+		    var otherDateRE=/^(\d*)\/(\w*)\/(\d*)$/;
                     if (c[fid].search(xlDateRE) == 0) {
                         date_bits = xlDateRE.exec(c[fid]);
                         f[ss] = dbEncode(date_bits[1], xlMonthToNum(date_bits[2]), date_bits[3]);
                     } else if (c[fid].search(altDateRE) == 0) {
                         date_bits = altDateRE.exec(c[fid]);
                         f[ss] = dbEncode(date_bits[3], date_bits[1], date_bits[2]);
+                    } else if (c[fid].search(otherDateRE) == 0) {
+                        date_bits = otherDateRE.exec(c[fid]);
+			var y = 2000+parseInt(date_bits[3]);
+			if (y > new Date().getFullYear()) y -= 100;
+                        f[ss] = dbEncode(y, xlMonthToNum(date_bits[2]), parseInt(date_bits[1]));
                     }
+		    if (f[ss] == "") f[ss] = '1900-01-01';
                 }
                 if (ss == 'grade') {
                     var today = new Date();
@@ -211,8 +248,9 @@ function convert(e) {
                 //if (fn == 2)
                 //f[ss] += "/";
             }
-            fd.append(ss, f[ss]);
+            client_encoded[ss] = f[ss];
         }
+	fd.append("encoded_client", JSON.stringify(client_encoded));
         fd.append("guid", guid);
 
         cReq.send(fd);
